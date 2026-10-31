@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Угадай слово 🎮</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;padding:22px 14px;
+ font-family:Arial,sans-serif;color:white;text-align:center;
+ background:linear-gradient(145deg,#10152f,#30205b,#642e83);
+}
+.card{
+ max-width:440px;margin:0 auto;padding:24px 17px;
+ background:#171a35eF;border:1px solid #ffffff20;
+ border-radius:25px;box-shadow:0 15px 45px #0005;
+}
+h1{font-size:30px;margin:5px 0 8px}
+.subtitle{color:#c8c8e7;font-size:14px}
+.stats{display:flex;justify-content:space-around;margin:22px 0}
+.stat{background:#ffffff12;border-radius:13px;padding:12px;flex:1;margin:4px}
+.stat b{display:block;font-size:23px;color:#ffd66b;margin-bottom:4px}
+.label{font-size:12px;color:#c8c8e7}
+.hint{margin:20px 0 12px;color:#d6ccff}
+.word{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:20px 0}
+.letter{
+ width:35px;height:43px;display:flex;align-items:center;justify-content:center;
+ border-bottom:3px solid #a78bfa;font-size:23px;font-weight:bold;
+ text-transform:uppercase;
+}
+.keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:18px 0}
+button{
+ border:0;border-radius:10px;padding:11px 3px;font-size:16px;
+ font-weight:bold;cursor:pointer;color:white;background:#5141a1;
+}
+button:active{transform:scale(.95)}
+button:disabled{opacity:.3}
+.action{width:100%;padding:13px;margin-top:9px;background:#7c4dff}
+.secondary{background:#30365b}
+.message{min-height:24px;font-weight:bold;color:#ffd66b}
+footer{font-size:12px;color:#aaaaca;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="card">
+ <h1>🎮 Угадай слово</h1>
+ <div class="subtitle">Проверь свою смекалку!</div>
+
+ <div class="stats">
+  <div class="stat"><b id="score">0</b><span class="label">Очки</span></div>
+  <div class="stat"><b id="lives">6</b><span class="label">Попытки</span></div>
+  <div class="stat"><b id="round">1</b><span class="label">Раунд</span></div>
+ </div>
+
+ <div class="hint" id="hint">💡 Подсказка появится здесь</div>
+ <div class="word" id="word"></div>
+ <div class="message" id="message">Выбирай буквы!</div>
+ <div class="keyboard" id="keyboard"></div>
+ <button class="action" id="hintButton" onclick="showHint()">💡 Открыть подсказку (−2 очка)</button>
+ <button class="action secondary" onclick="newGame()">🔄 Новая игра</button>
+ <footer>Угадывай слова и набирай очки ✨</footer>
+</div>
+
+<script>
+const words=[
+ {w:"КОСМОС",h:"Там находятся планеты и звёзды"},
+ {w:"ПИТОН",h:"Популярный язык программирования"},
+ {w:"МАШИНА",h:"Транспорт с четырьмя колёсами"},
+ {w:"РАДУГА",h:"Разноцветная дуга после дождя"},
+ {w:"КОМПЬЮТЕР",h:"На нём можно играть и работать"},
+ {w:"ШОКОЛАД",h:"Сладость из какао"},
+ {w:"ДИНОЗАВР",h:"Древнее животное"},
+ {w:"ТЕЛЕФОН",h:"Устройство для звонков и приложений"},
+ {w:"СОБАКА",h:"Домашний друг человека"},
+ {w:"ПЛАНЕТА",h:"Земля — это она"},
+ {w:"АРБУЗ",h:"Большая зелёная ягода"},
+ {w:"МОЛНИЯ",h:"Яркая вспышка во время грозы"},
+ {w:"КАРАНДАШ",h:"Им можно рисовать и писать"},
+ {w:"ВЕЛОСИПЕД",h:"Транспорт, на котором крутят педали"},
+ {w:"ПИРАТ",h:"Морской разбойник из приключенческих историй"},
+ {w:"РОБОТ",h:"Механический помощник"},
+ {w:"КЛАВИАТУРА",h:"На ней печатают текст"},
+ {w:"САМОЛЁТ",h:"Летает высоко в небе"},
+ {w:"МУЗЫКА",h:"Её слушают в наушниках"},
+ {w:"КЛУБНИКА",h:"Красная ягода с маленькими семечками"}
+];
+const alphabet="АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
+let current, guessed, lives, score=0, round=1, usedHints=false, ended=false;
+function newGame(){
+ current=words[Math.floor(Math.random()*words.length)];
+ guessed=[];lives=6;usedHints=false;ended=false;
+ document.getElementById("hint").textContent="💡 Подсказка скрыта";
+ document.getElementById("message").textContent="Выбирай буквы!";
+ document.getElementById("hintButton").disabled=false;
+ render();updateStats();
+}
+function render(){
+ const w=document.getElementById("word");
+ w.innerHTML="";
+ [...current.w].forEach(ch=>{
+  const el=document.createElement("div");el.className="letter";
+  el.textContent=(guessed.includes(ch)||ended)?ch:"";
+  w.appendChild(el);
+ });
+ const kb=document.getElementById("keyboard");kb.innerHTML="";
+ alphabet.forEach(ch=>{
+  const b=document.createElement("button");b.textContent=ch;
+  b.disabled=guessed.includes(ch)||ended;
+  b.onclick=()=>pick(ch);kb.appendChild(b);
+ });
+}
+function pick(ch){
+ if(ended||guessed.includes(ch))return;
+ guessed.push(ch);
+ if(!current.w.includes(ch))lives--;
+ const won=[...current.w].every(c=>guessed.includes(c));
+ if(won){
+  ended=true;score+=5+lives;
+  document.getElementById("message").textContent="🎉 Правильно! +"+(5+lives)+" очков!";
+  round++;
+ }else if(lives===0){
+  ended=true;
+  document.getElementById("message").textContent="😅 Попытки закончились! Ответ: "+current.w;
+  round++;
+ }else{
+  document.getElementById("message").textContent=current.w.split("").every(c=>guessed.includes(c))?"":"Продолжай! 💪";
+ }
+ render();updateStats();
+ if(ended)document.getElementById("hintButton").disabled=true;
+}
+function showHint(){
+ if(usedHints||ended)return;
+ usedHints=true;score=Math.max(0,score-2);
+ document.getElementById("hint").textContent="💡 "+current.h;
+ document.getElementById("hintButton").disabled=true;
+ updateStats();
+}
+function updateStats(){
+ document.getElementById("score").textContent=score;
+ document.getElementById("lives").textContent=lives;
+ document.getElementById("round").textContent=round;
+}
+newGame();
+</script>
+</body>
+</html>
